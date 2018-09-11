@@ -1,0 +1,250 @@
+package connectfour16_31;
+
+import javafx.animation.*;
+import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.layout.*;
+import static javafx.scene.paint.Color.*;
+import javafx.scene.paint.Paint;
+import javafx.scene.shape.*;
+import javafx.scene.text.Font;
+import javafx.stage.Stage;
+import javafx.util.Duration;
+
+public class ConnectFour16_31 extends Application {
+    
+    //Creates the main pane and keeps track of whose turn it is
+    private Pane main = new Pane();
+    private char whoseTurn = 'r';
+    
+    //Creates the board cells
+    private Cell[][] cell = new Cell[6][7];
+    
+    @Override
+    public void start(Stage primaryStage) {
+        
+        //Adds all the cells in the appropriate place
+        GridPane pane = new GridPane();
+        for(int i = 0; i < 7; i++){
+            for(int j = 0; j < 6; j++){
+                pane.add(cell[j][i] = new Cell(i, j), i, j);
+            }
+        }
+        
+        main.getChildren().add(pane);
+        
+        Scene scene = new Scene(main, 350, 300);
+        
+        primaryStage.setTitle("Connect Four");
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+    
+    //Checks if the board is full
+    public boolean isFull(){
+        for(int i = 0; i < 7; i++){
+            for(int j = 0; j < 6; j++){
+                if (cell[j][i].getPlayer() == ' ')
+                    return false;
+            }
+        }
+        return true;
+    }
+    
+    int[][] winners = new int[4][2];
+    Paint winColor;
+    
+    //Checks if the player won
+    public boolean isWon(char c){
+        for(int i = 0; i < 7; i++){
+            for(int j = 0; j < 6; j++){
+                //Checks horizontally
+                if(j + 3 < 6){
+                    if(cell[j][i].getPlayer() == c && cell[j + 1][i].getPlayer() == c
+                            && cell[j + 2][i].getPlayer() == c && cell[j + 3][i].getPlayer() == c){
+                        winColor = (c == 'r') ? RED : YELLOW;
+                        winners = new int[][] {
+                                {j, i},
+                                {j + 1, i},
+                                {j + 2, i},
+                                {j + 3, i}
+                            };
+                        return true;
+                    }
+                }
+                //Checks vertically
+                if(i + 3 < 7){
+                    if(cell[j][i].getPlayer() == c && cell[j][i + 1].getPlayer() == c
+                            && cell[j][i + 2].getPlayer() == c && cell[j][i + 3].getPlayer() == c){
+                        winColor = (c == 'r') ? RED : YELLOW;
+                        winners = new int[][] {
+                                {j, i},
+                                {j, i + 1},
+                                {j, i + 2},
+                                {j, i + 3}
+                            };
+                        return true;
+                    }
+                }
+                //Checks diagonal
+                if(j + 3 < 6 && i + 3 < 7){
+                    if(cell[j][i].getPlayer() == c && cell[j + 1][i + 1].getPlayer() == c
+                            && cell[j + 2][i + 2].getPlayer() == c && cell[j + 3][i + 3].getPlayer() == c){
+                        winColor = (c == 'r') ? RED : YELLOW;
+                        winners = new int[][] {
+                                {j, i},
+                                {j + 1, i + 1},
+                                {j + 2, i + 2},
+                                {j + 3, i + 3}
+                            };
+                        return true;
+                    }
+                }
+                //Checks diagonal
+                if(j + 3 < 6 && i - 3 >= 0){
+                    if(cell[j][i].getPlayer() == c && cell[j + 1][i - 1].getPlayer() == c
+                            && cell[j + 2][i - 2].getPlayer() == c && cell[j + 3][i - 3].getPlayer() == c){
+                        winColor = (c == 'r') ? RED : YELLOW;
+                        winners = new int[][] {
+                                {j, i},
+                                {j + 1, i - 1},
+                                {j + 2, i - 2},
+                                {j + 3, i - 3}
+                            };
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
+    //Starts blinking animation
+    public void showWinner(char c){
+        Timeline animation = new Timeline(
+            new KeyFrame(Duration.millis(400), e -> blinkWin()));
+        animation.setCycleCount(100);
+        animation.play();
+    }
+    
+    //The method that blinks the appropriate cells
+    public void blinkWin(){
+        for(int k = 0; k < 4; k++){
+            int i = winners[k][1];
+            int j = winners[k][0];
+            cell[j][i].setBlink(winColor);
+        }
+    }
+    
+    private Label lbl = new Label();
+    
+    //Sets no winner label
+    public void setLabel(){
+        lbl.setText("NO WINNERS");
+        lbl.setFont(new Font("Calibri", 63.5));
+        lbl.setTextFill(WHITE);
+        lbl.setLayoutX(0);
+        lbl.setLayoutY(85);
+        main.getChildren().add(lbl);
+    }
+    
+    //Creates the cell
+    class Cell extends Pane{
+        //Red or Yellow, board is blue
+        private Circle circle = new Circle();
+        private char player = ' ';
+        private int x;
+        private int y;
+        
+        //Sets the cell with the appropriate coordinantes
+        public Cell(int x, int y){
+            this.x = x;
+            this.y = y;
+            setStyle("-fx-background-color: darkblue;");
+            setPrefSize(50, 50);
+            circle = new Circle(25, 25, 20);
+            circle.setStroke(BLACK);
+            circle.setFill(WHITE);
+            getChildren().add(circle);
+            this.setOnMouseClicked(e -> handleMouseClicked());
+        }
+        
+        //Changes the color of the circle so it blinks
+        public void setBlink(Paint value){
+            circle.setFill((circle.getFill() == value) ? WHITE : value);
+        }
+        
+        //Returns the color of the cell
+        public char getPlayer(){
+            return player;
+        }
+        
+        //Sets to the appropriate color
+        private boolean setPlayer(char c){
+            boolean empty = false;
+            //Checks if the cells beneath are filled
+            if(y == 5){
+                switch(c){
+                    case 'r':
+                        circle.setFill(RED);
+                        player = 'r';
+                        break;
+                    case 'y':
+                        circle.setFill(YELLOW);
+                        player = 'y';
+                        break;
+                }
+            }
+            else{
+                for(int i = y + 1; i < 6; i++){
+                    if(cell[i][x].getPlayer() == ' '){
+                        empty = true;
+                    }
+                }
+            }
+            //Changes the color
+            if(!empty){
+                switch(c){
+                    case 'r':
+                        circle.setFill(RED);
+                        player = 'r';
+                        break;
+                    case 'y':
+                        circle.setFill(YELLOW);
+                        player = 'y';
+                        break;
+                }
+                return true;
+            }
+            return false;
+        }
+        
+        //Does the appropriate action if clicked
+        private void handleMouseClicked(){
+            //Checks if there's been a winner
+            if(winColor == null){
+                //Checks if empty
+                if(player == ' '){
+                    if(setPlayer(whoseTurn)){
+                        //Checks for winner
+                        if(isWon(whoseTurn))
+                            showWinner(whoseTurn);
+                        //Checks if board is full
+                        else if(isFull())
+                            setLabel();
+                        //Changes turn
+                        else
+                            whoseTurn = (whoseTurn == 'r') ? 'y' : 'r';
+                    }
+                }
+            }
+        }
+    }
+}
